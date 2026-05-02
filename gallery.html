@@ -3,253 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Browse the full collection of original watercolor paintings and hand-crafted greeting cards by Fariba Studio.">
     <title>Gallery | Fariba Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #af944d; --black: #1a1a1a; --white: #ffffff; --gray: #f9f9f9; }
-        body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--white); }
-        nav { display: flex; justify-content: space-between; padding: 25px 5%; align-items: center; border-bottom: 1px solid #eee; background: white; position: sticky; top: 0; z-index: 100; }
-        .logo { font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 22px; text-decoration: none; color: black; }
-        .nav-links a { text-decoration: none; color: var(--black); margin-left: 25px; font-size: 13px; font-weight: 600; }
+        :root { 
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9f9f9;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --border-color: #eeeeee;
+            --gold: #8f7632; 
+            --modal-overlay: rgba(255, 255, 255, 1);
+        }
         
-        .gallery-header { text-align: center; padding: 60px 20px; background: var(--gray); }
-        .gallery-header h1 { font-family: 'Playfair Display', serif; font-size: 3rem; margin-bottom: 10px; }
+        [data-theme="dark"] {
+            /* Dark Mode */
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --text-primary: #f4f4f4;
+            --text-secondary: #b0b0b0;
+            --border-color: #333333;
+            --gold: #d4af37; /* Slightly brighter gold for dark background */
+            --modal-overlay: rgba(18, 18, 18, 1);
+        }
+
+        /* Standardize transitions for a smooth theme switch */
+        * { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+
+        body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
+        
+        /* Accessibility: Skip link */
+        .skip-link { position: absolute; top: -40px; left: 0; background: var(--gold); color: white; padding: 8px; z-index: 200; transition: top 0.3s; text-decoration: none; }
+        .skip-link:focus { top: 0; }
+        a:focus { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+        /* Navigation */
+        nav { 
+            display: flex; justify-content: space-between; padding: 25px 5%; 
+            align-items: center; border-bottom: 1px solid var(--border-color); 
+            background: var(--bg-primary); position: sticky; top: 0; z-index: 100; 
+        }
+        .logo { font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 22px; text-decoration: none; color: var(--text-primary); }
+        .nav-links { display: flex; align-items: center; }
+        .nav-links a { text-decoration: none; color: var(--text-primary); margin-left: 25px; font-size: 13px; font-weight: 600; transition: 0.3s; }
+        .nav-links a:hover { color: var(--gold); }
+
+        /* Theme Toggle styling */
+        .theme-toggle-btn { background: none; border: none; cursor: pointer; margin-left: 25px; font-size: 18px; padding: 5px; color: var(--text-primary); }
+        .theme-toggle-btn:hover { color: var(--gold); }
+
+        /* Header */
+        .gallery-header { text-align: center; padding: 60px 20px; background: var(--bg-secondary); }
+        .gallery-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.5rem, 5vw, 3.5rem); margin-bottom: 15px; color: var(--text-primary); }
         
         .filter-nav { text-align: center; margin-bottom: 20px; }
-        .filter-btn { margin: 0 15px; font-size: 12px; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; color: #999; border: none; background: none; padding-bottom: 5px; }
-        .filter-btn.active { color: var(--black); font-weight: 700; border-bottom: 2px solid var(--black); }
+        .filter-btn { 
+            margin: 0 10px; font-size: 11px; text-transform: uppercase; cursor: pointer; 
+            letter-spacing: 1.5px; color: var(--text-secondary); border: none; background: none; 
+            padding: 8px 15px; transition: 0.3s;
+        }
+        .filter-btn.active { color: var(--text-primary); font-weight: 700; border-bottom: 2px solid var(--gold); }
 
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 40px; padding: 60px 5%; min-height: 400px; }
-        .art-item { text-align: center; transition: 0.4s ease; }
-        
-        /* Required for JS handling */
+        /* Gallery Grid */
+        .gallery-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 50px; padding: 60px 5%; 
+            min-height: 500px;
+        }
+        .art-item { text-align: center; cursor: pointer; }
         .art-item.hidden { display: none; }
-        .art-item.page-hidden { display: none; }
+        
+        .image-container { overflow: hidden; background: #fdfdfd; border: 1px solid var(--border-color); margin-bottom: 15px; }
+        [data-theme="dark"] .image-container { background: #000; border-color: #222; }
 
         .art-item img { 
             width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; 
-            background: #fdfdfd; border: 1px solid #eee; transition: 0.3s; cursor: zoom-in; 
+            transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
-        .art-item img:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .art-item:hover img { transform: scale(1.05); }
 
-        .art-item h3 { font-family: 'Playfair Display', serif; margin: 15px 0 5px; font-size: 20px; }
-        .category-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--gold); font-weight: 600; display: block; margin-bottom: 5px; }
-        .price { color: var(--black); font-weight: 600; margin-top: 10px; }
+        .art-item h3 { font-family: 'Playfair Display', serif; margin: 10px 0 5px; font-size: 20px; color: var(--text-primary); }
+        .category-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--gold); font-weight: 600; display: block; }
+        .price { color: var(--text-secondary); font-size: 15px; margin-top: 5px; }
 
         /* --- PRODUCT MODAL --- */
         .modal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0; 
-            width: 100%; height: 100%; background-color: rgba(255,255,255,0.98); overflow-y: auto; 
+            width: 100%; height: 100%; background-color: var(--modal-overlay); 
+            overflow-y: auto; transition: none; /* No transition for modal open */
         }
         .modal-container {
-            display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 50px; 
-            max-width: 1200px; margin: 50px auto; padding: 20px; align-items: start;
+            display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; 
+            max-width: 1300px; margin: 80px auto; padding: 40px; align-items: start;
         }
-        .modal-image-column img { width: 100%; height: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #eee; }
-        .modal-info-column { text-align: left; padding-top: 20px; }
-        .modal-info-column h2 { font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 10px; }
-        .item-spec { margin: 20px 0; border-top: 1px solid #eee; padding-top: 20px; }
-        .spec-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-        .spec-label { font-weight: 600; text-transform: uppercase; color: #999; letter-spacing: 1px; }
-        .spec-value { color: var(--black); font-weight: 400; }
-        .modal-description { line-height: 1.8; color: #555; margin: 30px 0; }
-        .modal-close { position: fixed; top: 20px; right: 35px; font-size: 40px; cursor: pointer; color: #000; z-index: 2001; }
-        .btn-gold { background: var(--gold); color: white; padding: 15px 35px; text-decoration: none; display: inline-block; font-weight: 600; transition: 0.3s; text-align: center; }
-        .btn-gold:hover { opacity: 0.8; }
 
-        /* --- PAGINATION STYLES --- */
-        .pagination-container { display: flex; justify-content: center; align-items: center; padding: 40px 0; gap: 10px; }
-        .page-btn { width: 40px; height: 40px; border: 1px solid #ddd; background: white; color: var(--black); cursor: pointer; font-weight: 600; transition: 0.3s; display: flex; justify-content: center; align-items: center; }
-        .page-btn.active { background: var(--gold); color: white; border-color: var(--gold); }
-        .page-btn:hover:not(.active) { background: var(--gray); }
+        /* ZOOM LOGIC */
+        .zoom-wrapper {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            cursor: zoom-in;
+            width: 100%;
+        }
+        [data-theme="dark"] .zoom-wrapper { background: #000; border-color: #222; }
 
-        footer { padding: 40px; background: #111; color: #777; text-align: center; font-size: 12px; }
+        .zoom-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+        }
+        .zoom-wrapper:active img { transform: scale(2); } /* Mobile Press & Hold */
+
+        .modal-info-column { text-align: left; color: var(--text-primary); }
+        .modal-info-column h2 { font-family: 'Playfair Display', serif; font-size: 2.8rem; margin: 0 0 10px 0; color: var(--text-primary); }
+        .item-spec { margin: 30px 0; border-top: 1px solid var(--border-color); padding-top: 20px; }
+        .spec-row { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid var(--bg-secondary); padding-bottom: 5px; }
+        .spec-label { font-weight: 600; text-transform: uppercase; color: var(--text-secondary); font-size: 11px; letter-spacing: 1px; }
+        .modal-description p { color: var(--text-secondary); }
         
+        .modal-close { position: fixed; top: 25px; right: 35px; font-size: 35px; cursor: pointer; color: var(--text-primary); z-index: 2001; transition: 0.3s; }
+        .modal-close:hover { color: var(--gold); }
+        
+        .btn-gold { 
+            background: var(--gold); color: white; padding: 18px 40px; 
+            text-decoration: none; display: block; font-weight: 700; 
+            text-transform: uppercase; letter-spacing: 1px; text-align: center;
+            transition: 0.3s; margin-top: 40px; 
+        }
+        .btn-gold:hover { background: #7a652a; transform: translateY(-2px); color: white; }
+
+        /* Pagination */
+        .pagination-container { display: flex; justify-content: center; padding: 50px 0; gap: 10px; }
+        .page-btn { 
+            width: 45px; height: 45px; border: 1px solid var(--border-color); background: var(--bg-primary); 
+            cursor: pointer; font-weight: 600; transition: 0.3s; color: var(--text-primary);
+        }
+        .page-btn.active { background: var(--gold); color: white; border-color: var(--gold); }
+        .page-btn:hover:not(.active) { background: var(--bg-secondary); }
+
+        footer { padding: 50px; background: #111; color: #666; text-align: center; font-size: 11px; letter-spacing: 1px; border-top: 1px solid #222; }
+
+        /* Responsive Breakpoints */
         @media (max-width: 900px) {
-            nav { flex-direction: column; padding: 15px; }
-            .nav-links { margin-top: 15px; }
-            .nav-links a { margin: 0 10px; font-size: 12px; }
-            .gallery-grid { grid-template-columns: 1fr !important; padding: 40px 5% !important; gap: 30px !important; }
-            .modal-container { grid-template-columns: 1fr; margin-top: 80px; }
+            .modal-container { grid-template-columns: 1fr; margin-top: 40px; padding: 20px; gap: 30px; }
+            .modal-info-column h2 { font-size: 2rem; }
+            header.gallery-header { padding: 40px 15px; }
+            .filter-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+            .filter-btn { margin: 5px; font-size: 10px; }
+            .gallery-grid { grid-template-columns: 1fr; gap: 40px; }
+            .modal-close { right: 20px; top: 15px; }
+            .nav-links { margin-top: 10px; }
+            nav { flex-direction: column; }
+            .nav-links a { margin-left: 15px; font-size: 12px; }
         }
     </style>
 </head>
 <body>
 
-    <nav>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <nav aria-label="Main Navigation">
         <a href="index.html" class="logo">Fariba Studio</a>
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="gallery.html" style="color: var(--gold);">Gallery</a>
             <a href="contact.html">Contact</a>
+            <!-- Dark Mode Toggle Button -->
+            <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Dark Mode">
+                <span id="theme-icon">🌙</span>
+            </button>
         </div>
     </nav>
 
-    <header class="gallery-header">
-        <h1>The Collection</h1>
-        <div class="filter-nav">
-            <button id="btn-all" class="filter-btn active" onclick="filterSelection('all')">All</button>
-            <button id="btn-canvas" class="filter-btn" onclick="filterSelection('canvas')">Original Canvases</button>
-            <button id="btn-card" class="filter-btn" onclick="filterSelection('card')">Greeting Cards</button>
-        </div>
-    </header>
+    <main id="main-content">
+        <header class="gallery-header">
+            <h1>The Collection</h1>
+            <div class="filter-nav" role="tablist">
+                <button id="btn-all" class="filter-btn active" onclick="filterSelection('all')" role="tab" aria-selected="true">All Works</button>
+                <button id="btn-canvas" class="filter-btn" onclick="filterSelection('canvas')" role="tab" aria-selected="false">Original Canvases</button>
+                <button id="btn-card" class="filter-btn" onclick="filterSelection('card')" role="tab" aria-selected="false">Greeting Cards</button>
+            </div>
+        </header>
 
-    <main class="gallery-grid" id="galleryGrid">
-        <!-- Add more items here; the script handles the 9-item limit automatically -->
-        <div class="art-item canvas">
-            <span class="category-tag">Original Canvas</span>
-            <img src="canvas/person2.jpg" alt="The Summer Parasol" 
-                 onclick="openModal(this.src, 'The Summer Parasol', '$850.00', 'A peaceful study of light and shade capturing global scenes.', 'Arches Cold Press 300gsm', '18x24 Canvas', '12:45')">
-            <h3>The Summer Parasol</h3>
-            <p class="price">$250.00</p>
-        </div>
+        <section class="gallery-grid" id="galleryGrid" aria-label="Artwork displays">
+            <!-- Item 1 -->
+            <div class="art-item canvas" onclick="openModal('canvas/person2.jpg', 'The Summer Parasol', '$850.00', 'A peaceful study of light and shade capturing a moment of quiet reflection.', 'Arches Cold Press 300gsm', '18x24 Canvas', '12 Hours')" role="button" aria-label="View details for The Summer Parasol">
+                <div class="image-container">
+                    <img src="canvas/person2.jpg" alt="Watercolor painting of a person with a parasol" loading="lazy">
+                </div>
+                <span class="category-tag">Original Canvas</span>
+                <h3>The Summer Parasol</h3>
+                <p class="price">$850.00</p>
+            </div>
 
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color1.png" alt="Sun-Drenched Siesta" 
-                 onclick="openModal(this.src, 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene.', 'Textured Watercolor Paper', '5x7 Card', '02:15')">
-            <h3>Sun-Drenched Siesta</h3>
-            <p class="price">$20.00</p>
-        </div>
+            <!-- Item 2 -->
+            <div class="art-item card" onclick="openModal('greeting-cards/color1.png', 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene from the Mediterranean coast.', 'Textured Cotton Paper', '5x7 Card', '3 Hours')" role="button" aria-label="View details for Sun-Drenched Siesta">
+                <div class="image-container">
+                    <img src="greeting-cards/color1.png" alt="Greeting card with sun-drenched coastal scene" loading="lazy">
+                </div>
+                <span class="category-tag">Greeting Card</span>
+                <h3>Sun-Drenched Siesta</h3>
+                <p class="price">$20.00</p>
+            </div>
 
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color1.png" alt="Sun-Drenched Siesta" 
-                 onclick="openModal(this.src, 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene.', 'Textured Watercolor Paper', '5x7 Card', '02:15')">
-            <h3>Sun-Drenched Siesta</h3>
-            <p class="price">$20.00</p>
-        </div>
+            <!-- Add more items as needed, keeping the same structure -->
+             <!-- Items 3 through 10 (duplicates for pagination demonstration) -->
+             <script>
+                // This script block just duplicates items for demonstration of pagination
+                const itemsGrid = document.getElementById('galleryGrid');
+                const cardTemplate = itemsGrid.innerHTML; // Get the html of existing items (Parasol + Siesta)
+                
+                // For demonstration, let's keep the parasol unique (Item 1), then duplicate Sun-Drenched Siesta
+                const cardSiesta = `
+                <div class="art-item card" onclick="openModal('greeting-cards/color1.png', 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene from the Mediterranean coast.', 'Textured Cotton Paper', '5x7 Card', '3 Hours')" role="button" aria-label="View details for Sun-Drenched Siesta">
+                    <div class="image-container">
+                        <img src="greeting-cards/color1.png" alt="Greeting card with sun-drenched coastal scene" loading="lazy">
+                    </div>
+                    <span class="category-tag">Greeting Card</span>
+                    <h3>Sun-Drenched Siesta</h3>
+                    <p class="price">$20.00</p>
+                </div>`;
 
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color1.png" alt="Sun-Drenched Siesta" 
-                 onclick="openModal(this.src, 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene.', 'Textured Watercolor Paper', '5x7 Card', '02:15')">
-            <h3>Sun-Drenched Siesta</h3>
-            <p class="price">$20.00</p>
-        </div>
+                // We need 8 more (Total 10)
+                for(let i=0; i<8; i++) {
+                    itemsGrid.insertAdjacentHTML('beforeend', cardSiesta);
+                }
+             </script>
+        </section>
 
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color2.png" alt="Loyal Companions" 
-                 onclick="openModal(this.src, 'Loyal Companions', '$20.00', 'A study of animals and puppies.', 'Textured Watercolor Paper', '5x7 Card', '03:30')">
-            <h3>Loyal Companions</h3>
-            <p class="price">$20.00</p>
-        </div>
-
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color3.png" alt="Aegean Afternoon" 
-                 onclick="openModal(this.src, 'Aegean Afternoon', '$25.00', 'Vibrant global landscape.', 'Fine Art Cotton Rag', '5x7 Card', '04:00')">
-            <h3>Aegean Afternoon</h3>
-            <p class="price">$20.00</p>
-        </div>
-
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color4.png" alt="Emerald in Motion" 
-                 onclick="openModal(this.src, 'Emerald in Motion', '$25.00', 'A vibrant study of a mallard duck.', 'Fine Art Cotton Rag', '5x7 Card', '04:30')">
-            <h3>Emerald in Motion</h3>
-            <p class="price">$20.00</p>
-        </div>
-
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color1.png" alt="Sun-Drenched Siesta" 
-                 onclick="openModal(this.src, 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene.', 'Textured Watercolor Paper', '5x7 Card', '02:15')">
-            <h3>Sun-Drenched Siesta</h3>
-            <p class="price">$20.00</p>
-        </div>
-        
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color1.png" alt="Sun-Drenched Siesta" 
-                 onclick="openModal(this.src, 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene.', 'Textured Watercolor Paper', '5x7 Card', '02:15')">
-            <h3>Sun-Drenched Siesta</h3>
-            <p class="price">$20.00</p>
-        </div>
-        
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color1.png" alt="Sun-Drenched Siesta" 
-                 onclick="openModal(this.src, 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene.', 'Textured Watercolor Paper', '5x7 Card', '02:15')">
-            <h3>Sun-Drenched Siesta</h3>
-            <p class="price">$20.00</p>
-        </div>
-        
-        <div class="art-item card">
-            <span class="category-tag">Greeting Card</span>
-            <img src="greeting-cards/color1.png" alt="Sun-Drenched Siesta" 
-                 onclick="openModal(this.src, 'Sun-Drenched Siesta', '$20.00', 'A warm, calming scene.', 'Textured Watercolor Paper', '5x7 Card', '02:15')">
-            <h3>Sun-Drenched Siesta</h3>
-            <p class="price">$20.00</p>
-        </div>
+        <!-- Pagination Controls -->
+        <nav id="pagination" class="pagination-container" aria-label="Gallery Pagination"></nav>
     </main>
 
-    <!-- Pagination Controls -->
-    <div id="pagination" class="pagination-container"></div>
-
-    <!-- Product Detail Modal -->
-    <div id="productModal" class="modal">
-        <span class="modal-close" onclick="closeModal()">&times;</span>
+    <!-- PRODUCT MODAL -->
+    <div id="productModal" class="modal" aria-modal="true" role="dialog" aria-labelledby="modalTitle">
+        <span class="modal-close" onclick="closeModal()" aria-label="Close modal" role="button" tabindex="0">&times;</span>
         <div class="modal-container">
+            <!-- Left Side: Image with Zoom -->
             <div class="modal-image-column">
-                <img id="modalImg" src="" alt="">
+                <div class="zoom-wrapper" id="zoomContainer" tabindex="0" aria-label="Artwork image. Active or press and hold to zoom.">
+                    <img id="modalImg" src="" alt="Detailed view of artwork">
+                </div>
+                <p style="font-size: 10px; color: var(--text-secondary); margin-top: 10px; text-align: center; text-transform: uppercase; letter-spacing: 1px;">
+                    Hover to zoom (Desktop) or Press & Hold (Mobile)
+                </p>
             </div>
+
+            <!-- Right Side: Description -->
             <div class="modal-info-column">
                 <h2 id="modalTitle">Artwork Title</h2>
-                <p id="modalPrice" style="font-size: 24px; color: var(--gold); font-weight: 600;">$0.00</p>
-                <div class="modal-description" id="modalDesc">Description goes here...</div>
-                <div class="item-spec">
-                    <div class="spec-row"><span class="spec-label">Paper / Material</span><span id="modalPaper" class="spec-value">-</span></div>
-                    <div class="spec-row"><span class="spec-label">Dimensions</span><span id="modalSize" class="spec-value">-</span></div>
-                    <div class="spec-row"><span class="spec-label">Time Spent</span><span id="modalHours" class="spec-value">00:00</span></div>
-                    <div class="spec-row"><span class="spec-label">Edition</span><span class="spec-value">One-of-a-kind Original</span></div>
+                <p id="modalPrice" style="font-size: 24px; color: var(--gold); font-weight: 600; margin-bottom: 20px;">$0.00</p>
+                
+                <div class="modal-description">
+                    <h4 style="text-transform: uppercase; font-size: 12px; letter-spacing: 1px; margin-bottom: 5px; color: var(--text-primary);">About this piece</h4>
+                    <p id="modalDesc">Description text goes here...</p>
                 </div>
-                <a href="contact.html" class="btn-gold" style="display: block; margin-top: 30px;">Inquire About This Piece</a>
+
+                <div class="item-spec">
+                    <div class="spec-row"><span class="spec-label">Medium / Paper</span><span id="modalPaper" class="spec-value">-</span></div>
+                    <div class="spec-row"><span class="spec-label">Dimensions</span><span id="modalSize" class="spec-value">-</span></div>
+                    <div class="spec-row"><span class="spec-label">Creation Time</span><span id="modalHours" class="spec-value">-</span></div>
+                    <div class="spec-row"><span class="spec-label">Status</span><span class="spec-value" style="color: var(--gold); font-weight: 600;">Available for Purchase</span></div>
+                </div>
+
+                <a href="contact.html" class="btn-gold">Inquire About This Piece</a>
             </div>
         </div>
     </div>
 
-    <footer>&copy; 2026 FARIBA STUDIO | ALL WORKS ARE HAND-PAINTED ORIGINALS</footer>
+    <footer role="contentinfo">&copy; 2026 FARIBA STUDIO | ALL WORKS ARE HAND-PAINTED ORIGINALS</footer>
 
     <script>
+        // --- 1. DARK/LIGHT MODE PERSISTENCE ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const htmlElement = document.documentElement;
+
+        // Check for saved preference or system preference
+        const currentTheme = localStorage.getItem('theme') || 'light';
+
+        // Apply theme on load
+        if (currentTheme === 'dark') {
+            htmlElement.setAttribute('data-theme', 'dark');
+            themeIcon.innerText = '☀️'; // Show sun icon in dark mode
+        } else {
+            themeIcon.innerText = '🌙'; // Show moon icon in light mode
+        }
+
+        // Toggle Logic
+        themeToggle.addEventListener('click', () => {
+            let theme = htmlElement.getAttribute('data-theme');
+            
+            if (theme === 'dark') {
+                htmlElement.removeAttribute('data-theme');
+                themeIcon.innerText = '🌙';
+                localStorage.setItem('theme', 'light');
+            } else {
+                htmlElement.setAttribute('data-theme', 'dark');
+                themeIcon.innerText = '☀️';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // --- 2. GALLERY & MODAL LOGIC (Existing) ---
         const itemsPerPage = 8;
         let currentPage = 1;
         let currentCategory = 'all';
 
+        // Initialize Gallery on load
+        updateGallery();
+
+        // --- GALLERY CORE ---
         function updateGallery() {
             const items = Array.from(document.querySelectorAll('.art-item'));
+            const filteredItems = items.filter(item => (currentCategory === 'all' || item.classList.contains(currentCategory)));
             
-            // 1. Filter items by category first
-            const filteredItems = items.filter(item => {
-                if (currentCategory === 'all') return true;
-                return item.classList.contains(currentCategory);
-            });
+            items.forEach(item => item.classList.add('hidden'));
 
-            // 2. Hide all items initially
-            items.forEach(item => {
-                item.classList.add('hidden');
-                item.classList.add('page-hidden');
-            });
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
 
-            // 3. Logic for pagination within the filtered set
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-
-            filteredItems.forEach((item, index) => {
-                if (index >= startIndex && index < endIndex) {
-                    item.classList.remove('hidden');
-                    item.classList.remove('page-hidden');
-                }
-            });
-
+            filteredItems.slice(start, end).forEach(item => item.classList.remove('hidden'));
             renderPagination(filteredItems.length);
         }
 
         function renderPagination(totalItems) {
             const paginationDiv = document.getElementById('pagination');
             paginationDiv.innerHTML = '';
-            
             const pageCount = Math.ceil(totalItems / itemsPerPage);
             if (pageCount <= 1) return; 
 
@@ -257,33 +343,33 @@
                 const btn = document.createElement('button');
                 btn.innerText = i;
                 btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
-                btn.onclick = () => {
-                    currentPage = i;
-                    updateGallery();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                };
+                btn.setAttribute('aria-label', `Page ${i}`);
+                btn.onclick = () => { currentPage = i; updateGallery(); window.scrollTo({top: 0, behavior: 'smooth'}); };
                 paginationDiv.appendChild(btn);
             }
         }
 
         function filterSelection(category) {
             currentCategory = category;
-            currentPage = 1; // Reset to first page on filter change
-            
-            const buttons = document.querySelectorAll('.filter-btn');
-            buttons.forEach(btn => {
+            currentPage = 1;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
-                if (category === 'all' && btn.id === 'btn-all') btn.classList.add('active');
-                if (category === 'canvas' && btn.id === 'btn-canvas') btn.classList.add('active');
-                if (category === 'card' && btn.id === 'btn-card') btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'false');
+                if(btn.id === `btn-${category}`) {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-selected', 'true');
+                }
             });
-
             updateGallery();
         }
 
+        // --- MODAL & ZOOM LOGIC ---
+        const zoomContainer = document.getElementById('zoomContainer');
+        const modalImg = document.getElementById('modalImg');
+
         function openModal(imgSrc, title, price, desc, paper, size, hours) {
             document.getElementById("productModal").style.display = "block";
-            document.getElementById("modalImg").src = imgSrc;
+            modalImg.src = imgSrc;
             document.getElementById("modalTitle").innerText = title;
             document.getElementById("modalPrice").innerText = price;
             document.getElementById("modalDesc").innerText = desc;
@@ -291,20 +377,39 @@
             document.getElementById("modalSize").innerText = size;
             document.getElementById("modalHours").innerText = hours;
             document.body.style.overflow = "hidden";
+            // Set focus to modal for accessibility
+            document.getElementById("productModal").focus();
         }
 
         function closeModal() {
             document.getElementById("productModal").style.display = "none";
             document.body.style.overflow = "auto"; 
+            modalImg.style.transform = "scale(1)"; // Reset zoom
         }
 
-        window.onclick = function(event) {
-            let modal = document.getElementById("productModal");
-            if (event.target == modal) closeModal();
-        }
+        // Handle Escape key to close modal
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape" && document.getElementById("productModal").style.display === "block") {
+                closeModal();
+            }
+        });
 
-        // Run on load
-        window.onload = updateGallery;
+        // Desktop Zoom Interaction
+        zoomContainer.addEventListener('mousemove', (e) => {
+            const x = e.clientX - zoomContainer.offsetLeft;
+            const y = e.clientY - zoomContainer.offsetTop;
+            
+            modalImg.style.transformOrigin = `${(x / zoomContainer.offsetWidth) * 100}% ${(y / zoomContainer.offsetHeight) * 100}%`;
+            modalImg.style.transform = "scale(2.5)";
+        });
+
+        zoomContainer.addEventListener('mouseleave', () => {
+            modalImg.style.transform = "scale(1)";
+            modalImg.style.transformOrigin = "center center";
+        });
+
+        // Close modal on outside click
+        window.onclick = (e) => { if (e.target.className === 'modal') closeModal(); }
     </script>
 </body>
 </html>
